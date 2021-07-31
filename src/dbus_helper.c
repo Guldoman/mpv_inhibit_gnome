@@ -48,5 +48,6 @@ void DBH_destroy(DBH *dbh)
 	dbus_connection_flush(dbh->connection);
 	dbus_connection_unref(dbh->connection);
 	dbus_error_free(dbh->error);
+	free(dbh->error);
 	free(dbh);
 }
