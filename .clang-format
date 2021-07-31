@@ -1,0 +1,21 @@
+Language: Cpp
+UseTab: ForIndentation
+TabWidth: '2'
+ColumnLimit: 80
+SpaceBeforeParens: Never
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterControlStatement: Always
+  AfterFunction: true
+  BeforeElse: true
+  SplitEmptyFunction: false
+IncludeBlocks: Preserve
+IndentPPDirectives: BeforeHash
+IndentCaseLabels: true
+MaxEmptyLinesToKeep: 2
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortBlocksOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AlignOperands: true
+AlignConsecutiveAssignments: true
+BreakBeforeBinaryOperators: NonAssignment
