@@ -35,8 +35,9 @@ DBH *DBH_init()
 	dbus_error_init(dbh->error);
 	dbh->connection = dbus_bus_get(DBUS_BUS_SESSION, dbh->error);
 
-	if(dbus_error_is_set(dbh->error))
+	if(dbh->connection == NULL || dbus_error_is_set(dbh->error))
 	{
+		DBH_destroy(dbh);
 		return NULL;
 	}
 
@@ -45,8 +46,11 @@ DBH *DBH_init()
 
 void DBH_destroy(DBH *dbh)
 {
-	dbus_connection_flush(dbh->connection);
-	dbus_connection_unref(dbh->connection);
+	if(dbh->connection != NULL)
+	{
+		dbus_connection_flush(dbh->connection); // flush remaining messages
+		dbus_connection_unref(dbh->connection);
+	}
 	dbus_error_free(dbh->error);
 	free(dbh->error);
 	free(dbh);
