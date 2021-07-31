@@ -64,6 +64,7 @@ int mpv_open_cplugin(mpv_handle *handle)
 
 				break;
 			case MPV_EVENT_SHUTDOWN: // quit
+				GSM_destroy(globals.gsm);
 				done = true;
 			default:
 				break;
