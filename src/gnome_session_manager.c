@@ -25,18 +25,21 @@ void GSM_inhibit(GSM *gsm, char *app_id, char *reason, uint32_t flags)
 	    DBUS_TYPE_UINT32, &toplevel_xid, DBUS_TYPE_STRING, &reason,
 	    DBUS_TYPE_UINT32, &flags, DBUS_TYPE_INVALID);
 
-	if(result == NULL || dbus_error_is_set(gsm->dbh->error))
+	if(result == NULL)
 	{
 		return; // error
 	}
-	if(!dbus_message_has_signature(result, "u"))
+	if(dbus_error_is_set(gsm->dbh->error)
+	   || !dbus_message_has_signature(result, "u"))
 	{
+		dbus_message_unref(result);
 		return; // wrong signature
 	}
 
 	DBusMessageIter iter;
 	dbus_message_iter_init(result, &iter);
 	dbus_message_iter_get_basic(&iter, &(gsm->cookie));
+	dbus_message_unref(result);
 }
 void GSM_uninhibit(GSM *gsm)
 {
@@ -50,9 +53,14 @@ void GSM_uninhibit(GSM *gsm)
 	             "/org/gnome/SessionManager", "org.gnome.SessionManager",
 	             "Uninhibit", DBUS_TYPE_UINT32, &gsm->cookie, DBUS_TYPE_INVALID);
 
-	if(result == NULL || dbus_error_is_set(gsm->dbh->error))
+	if(result == NULL)
 	{
 		return; // error
+	}
+	dbus_message_unref(result);
+	if(dbus_error_is_set(gsm->dbh->error))
+	{
+		return;
 	}
 
 	gsm->cookie = 0;
