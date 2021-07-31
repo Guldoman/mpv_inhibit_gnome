@@ -64,13 +64,22 @@ GSM *GSM_init()
 
 	gsm->dbh = DBH_init();
 
+	if(gsm->dbh == NULL)
+	{
+		GSM_destroy(gsm);
+		return NULL;
+	}
+
 	gsm->cookie = 0;
 
 	return gsm;
 }
 void GSM_destroy(GSM *gsm)
 {
-	GSM_uninhibit(gsm); // force unhinibit
-	DBH_destroy(gsm->dbh);
+	if(gsm->dbh != NULL)
+	{
+		GSM_uninhibit(gsm); // force unhinibit
+		DBH_destroy(gsm->dbh);
+	}
 	free(gsm);
 }
