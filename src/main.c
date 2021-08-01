@@ -11,6 +11,9 @@ typedef struct {
 	mpv_handle *handle;
 	GSM *gsm;
 
+	// config options
+	bool enable;
+
 	// mpv status
 	bool pause;
 	bool idle_active;
@@ -26,6 +29,9 @@ void show_text(mpv_handle *handle, const char *text)
 
 void begin_inhibit(plugin_globals *globals)
 {
+	if(!globals->enable)
+		return;
+
 	// If `idle_active` is true, we are not really paused
 	if(!globals->idle_active)
 	{
@@ -35,6 +41,9 @@ void begin_inhibit(plugin_globals *globals)
 }
 void end_inhibit(plugin_globals *globals)
 {
+	if(!globals->enable)
+		return;
+
 	show_text(globals->handle, "Stopping inhibit");
 	GSM_uninhibit(globals->gsm);
 }
@@ -44,6 +53,9 @@ void init_globals(plugin_globals *globals)
 	// handles
 	globals->gsm    = NULL;
 	globals->handle = NULL;
+
+	// config options
+	globals->enable = false;
 
 	// mpv status
 	globals->pause       = false;
@@ -63,13 +75,16 @@ int mpv_open_cplugin(mpv_handle *handle)
 		return -1; // error while opening dbus
 	}
 
+	// If false disable inhibition
+	mpv_observe_property(globals.handle, 0, "stop-screensaver", MPV_FORMAT_FLAG);
+
 	// Returns true if no file is loaded
 	// We need to check this property because `pause` may be false while no
 	// media is being played and `--idle` is specified
-	mpv_observe_property(handle, 0, "idle-active", MPV_FORMAT_FLAG);
+	mpv_observe_property(globals.handle, 0, "idle-active", MPV_FORMAT_FLAG);
 
 	// True if paused
-	mpv_observe_property(handle, 0, "pause", MPV_FORMAT_FLAG);
+	mpv_observe_property(globals.handle, 0, "pause", MPV_FORMAT_FLAG);
 
 	mpv_event *last_event    = NULL;
 	mpv_event_property *prop = NULL;
@@ -115,6 +130,19 @@ int mpv_open_cplugin(mpv_handle *handle)
 							{
 								begin_inhibit(&globals);
 							}
+						}
+					}
+					else if(strcmp(prop->name, "stop-screensaver") == 0)
+					{
+						int old_enable = globals.enable;
+						globals.enable = *(int *)(prop->data);
+						if(old_enable)
+						{
+							end_inhibit(&globals);
+						}
+						else if(!globals.pause)
+						{
+							begin_inhibit(&globals);
 						}
 					}
 				}
