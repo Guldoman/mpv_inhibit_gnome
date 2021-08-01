@@ -7,8 +7,13 @@
 #include "gnome_session_manager.h"
 
 typedef struct {
+	// handles
 	mpv_handle *handle;
 	GSM *gsm;
+
+	// mpv status
+	bool pause;
+	bool idle_active;
 } plugin_globals;
 
 void show_text(mpv_handle *handle, const char *text)
@@ -30,10 +35,22 @@ void end_inhibit(plugin_globals *globals)
 	GSM_uninhibit(globals->gsm);
 }
 
+void init_globals(plugin_globals *globals)
+{
+	// handles
+	globals->gsm    = NULL;
+	globals->handle = NULL;
+
+	// mpv status
+	globals->pause       = false;
+	globals->idle_active = false;
+}
+
 int mpv_open_cplugin(mpv_handle *handle)
 {
 	bool done = 0;
 	plugin_globals globals;
+	init_globals(&globals);
 	globals.handle = handle;
 
 	globals.gsm = GSM_init();
