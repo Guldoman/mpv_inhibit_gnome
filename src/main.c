@@ -72,17 +72,21 @@ int mpv_open_cplugin(mpv_handle *handle)
 		{
 			case MPV_EVENT_PROPERTY_CHANGE:
 				prop = last_event->data;
-				if(strcmp(prop->name, "pause") != 0 || prop->format != MPV_FORMAT_FLAG)
-					break;
 
-				int pause_status = *(int *)(prop->data);
-				if(pause_status == 0)
+				if(prop->format == MPV_FORMAT_FLAG)
 				{
-					begin_inhibit(&globals);
-				}
-				else
-				{
-					end_inhibit(&globals);
+					if(strcmp(prop->name, "pause") == 0)
+					{
+						globals.pause = *(int *)(prop->data);
+						if(!globals.pause)
+						{
+							begin_inhibit(&globals);
+						}
+						else
+						{
+							end_inhibit(&globals);
+						}
+					}
 				}
 
 				break;
