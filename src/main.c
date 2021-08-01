@@ -26,8 +26,12 @@ void show_text(mpv_handle *handle, const char *text)
 
 void begin_inhibit(plugin_globals *globals)
 {
-	show_text(globals->handle, "Starting inhibit");
-	GSM_inhibit(globals->gsm, "mpv", "Media is playing", GSM_INHIBIT_IDLE);
+	// If `idle_active` is true, we are not really paused
+	if(!globals->idle_active)
+	{
+		show_text(globals->handle, "Starting inhibit");
+		GSM_inhibit(globals->gsm, "mpv", "Media is playing", GSM_INHIBIT_IDLE);
+	}
 }
 void end_inhibit(plugin_globals *globals)
 {
@@ -59,6 +63,12 @@ int mpv_open_cplugin(mpv_handle *handle)
 		return -1; // error while opening dbus
 	}
 
+	// Returns true if no file is loaded
+	// We need to check this property because `pause` may be false while no
+	// media is being played and `--idle` is specified
+	mpv_observe_property(handle, 0, "idle-active", MPV_FORMAT_FLAG);
+
+	// True if paused
 	mpv_observe_property(handle, 0, "pause", MPV_FORMAT_FLAG);
 
 	mpv_event *last_event    = NULL;
@@ -87,10 +97,31 @@ int mpv_open_cplugin(mpv_handle *handle)
 							end_inhibit(&globals);
 						}
 					}
+					else if(strcmp(prop->name, "idle-active") == 0)
+					{
+						int old_idle_active = globals.idle_active;
+						globals.idle_active = *(int *)(prop->data);
+						if(globals.idle_active)
+						{
+							// The player is active with no media being played
+							if(!globals.pause)
+							{
+								end_inhibit(&globals);
+							}
+						}
+						else
+						{
+							if(old_idle_active && !globals.pause)
+							{
+								begin_inhibit(&globals);
+							}
+						}
+					}
 				}
 
 				break;
 			case MPV_EVENT_SHUTDOWN: // quit
+				// Will automatically uninhibit
 				GSM_destroy(globals.gsm);
 				done = true;
 			default:
