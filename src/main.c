@@ -11,16 +11,22 @@ typedef struct {
 	GSM *gsm;
 } plugin_globals;
 
+void show_text(mpv_handle *handle, const char *text)
+{
+#ifdef DEBUG
+	const char *command[] = {"show-text", text, NULL};
+	mpv_command(handle, command);
+#endif
+}
+
 void begin_inhibit(plugin_globals *globals)
 {
-	const char *command[] = {"show-text", "Starting inhibit", NULL};
-	mpv_command(globals->handle, (const char **)command);
+	show_text(globals->handle, "Starting inhibit");
 	GSM_inhibit(globals->gsm, "mpv", "Media is playing", GSM_INHIBIT_IDLE);
 }
 void end_inhibit(plugin_globals *globals)
 {
-	const char *command[] = {"show-text", "Stopping inhibit", NULL};
-	mpv_command(globals->handle, (const char **)command);
+	show_text(globals->handle, "Stopping inhibit");
 	GSM_uninhibit(globals->gsm);
 }
 
