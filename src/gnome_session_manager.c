@@ -42,6 +42,7 @@ void GSM_inhibit(GSM *gsm, const char *app_id, const char *reason,
 	dbus_message_iter_get_basic(&iter, &(gsm->cookie));
 	dbus_message_unref(result);
 }
+
 void GSM_uninhibit(GSM *gsm)
 {
 	if(!gsm->cookie)
@@ -83,11 +84,12 @@ GSM *GSM_init()
 
 	return gsm;
 }
+
 void GSM_destroy(GSM *gsm)
 {
 	if(gsm->dbh != NULL)
 	{
-		GSM_uninhibit(gsm); // force unhinibit
+		GSM_uninhibit(gsm); // force uninhibit
 		DBH_destroy(gsm->dbh);
 	}
 	free(gsm);
