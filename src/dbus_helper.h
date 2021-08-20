@@ -8,7 +8,8 @@ typedef struct {
 
 DBH *DBH_init();
 
-DBusMessage *DBH_call(DBH *dbh, char *name, char *path, char *interface,
-                      char *method_name, int first_arg_type, ...);
+DBusMessage *DBH_call(DBH *dbh, const char *name, const char *path,
+                      const char *interface, const char *method_name,
+                      int first_arg_type, ...);
 
 void DBH_destroy(DBH *dbh);

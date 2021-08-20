@@ -10,7 +10,8 @@ typedef struct GSM_s GSM;
 
 GSM *GSM_init();
 
-void GSM_inhibit(GSM *gsm, char *app_id, char *reason, uint32_t flags);
+void GSM_inhibit(GSM *gsm, const char *app_id, const char *reason,
+                 uint32_t flags);
 void GSM_uninhibit(GSM *gsm);
 
 void GSM_destroy(GSM *gsm);

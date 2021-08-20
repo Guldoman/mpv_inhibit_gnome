@@ -1,8 +1,9 @@
 #include "dbus_helper.h"
 #include <stdlib.h>
 
-DBusMessage *DBH_call(DBH *dbh, char *name, char *path, char *interface,
-                      char *method_name, int first_arg_type, ...)
+DBusMessage *DBH_call(DBH *dbh, const char *name, const char *path,
+                      const char *interface, const char *method_name,
+                      int first_arg_type, ...)
 {
 	va_list args;
 	va_start(args, first_arg_type);
