@@ -58,7 +58,7 @@ void init_globals(plugin_globals *globals)
 	globals->enable = false;
 
 	// mpv status
-	globals->pause       = false;
+	globals->pause       = true;
 	globals->idle_active = false;
 }
 
