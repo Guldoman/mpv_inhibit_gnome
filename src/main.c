@@ -32,12 +32,8 @@ void begin_inhibit(plugin_globals *globals)
 	if(!globals->enable)
 		return;
 
-	// If `idle_active` is true, we are not really paused
-	if(!globals->idle_active)
-	{
-		show_text(globals->handle, "Starting inhibit");
-		GSM_inhibit(globals->gsm, "mpv", "Media is playing", GSM_INHIBIT_IDLE);
-	}
+	show_text(globals->handle, "Starting inhibit");
+	GSM_inhibit(globals->gsm, "mpv", "Media is playing", GSM_INHIBIT_IDLE);
 }
 void end_inhibit(plugin_globals *globals)
 {
@@ -72,7 +68,7 @@ int mpv_open_cplugin(mpv_handle *handle)
 	globals.gsm = GSM_init();
 	if(globals.gsm == NULL)
 	{
-		return -1; // error while opening dbus
+		return -1; // Error while opening dbus
 	}
 
 	// If false disable inhibition
@@ -88,7 +84,7 @@ int mpv_open_cplugin(mpv_handle *handle)
 
 	mpv_event *last_event    = NULL;
 	mpv_event_property *prop = NULL;
-	// event loop
+	// Event loop
 	while(!done)
 	{
 		last_event = mpv_wait_event(handle, -1);
@@ -103,30 +99,40 @@ int mpv_open_cplugin(mpv_handle *handle)
 					if(strcmp(prop->name, "pause") == 0)
 					{
 						globals.pause = *(int *)(prop->data);
-						if(!globals.pause)
+
+						// If `idle_active` is true, we are not really paused
+						if(!globals.idle_active)
 						{
-							begin_inhibit(&globals);
-						}
-						else
-						{
-							end_inhibit(&globals);
+							if(!globals.pause)
+							{
+								begin_inhibit(&globals);
+							}
+							else
+							{
+								end_inhibit(&globals);
+							}
 						}
 					}
 					else if(strcmp(prop->name, "idle-active") == 0)
 					{
 						int old_idle_active = globals.idle_active;
 						globals.idle_active = *(int *)(prop->data);
-						if(globals.idle_active)
+
+						if(!old_idle_active && globals.idle_active)
 						{
-							// The player is active with no media being played
-							if(!globals.pause)
+							// The player became idle-active
+							if(!globals.pause) // Avoid ending inhibit uselessly
 							{
 								end_inhibit(&globals);
 							}
 						}
-						else
+						else if(old_idle_active && !globals.idle_active)
 						{
-							if(old_idle_active && !globals.pause)
+							// The player stopped being idle-active
+							// so we follow the pause property
+							// We were already uninhibited, so only check if
+							// playing
+							if(!globals.pause)
 							{
 								begin_inhibit(&globals);
 							}
@@ -136,13 +142,19 @@ int mpv_open_cplugin(mpv_handle *handle)
 					{
 						int old_enable = globals.enable;
 						globals.enable = *(int *)(prop->data);
-						if(old_enable)
+
+						if(old_enable && !globals.enable)
 						{
+							// We got disabled, stop inhibition in any case
 							end_inhibit(&globals);
 						}
-						else if(!globals.pause)
+						else if(!old_enable && globals.enable)
 						{
-							begin_inhibit(&globals);
+							// We got enabled
+							if(!globals.pause && !globals.idle_active)
+							{
+								begin_inhibit(&globals);
+							}
 						}
 					}
 				}
