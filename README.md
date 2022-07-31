@@ -7,7 +7,8 @@ GNOME supports the standard inhibition protocol
 ([yet](https://gitlab.gnome.org/GNOME/mutter/-/merge_requests/111)).
 
 ## Install
-Depends on library: `libdbus-1` (Arch: `dbus`, Fedora: `dbus-devel`)
+The library `libdbus-1` is needed (Arch: `dbus`, Fedora: `dbus-devel`, Ubuntu: `libdbus-1-dev`).
+
 Install copies `lib/mpv_inhibit_gnome.so` to mpv scripts directory:
 ```bash
 # install for user: ~/.config/mpv/scripts

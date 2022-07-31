@@ -1,7 +1,7 @@
 TARGET = lib/mpv_inhibit_gnome.so
 SRC_DIR = src
 
-C_FLAGS = -Wall -g -fPIC -I./include/ $(shell pkg-config --libs --cflags dbus-1)
+C_FLAGS = -Wall -g -fPIC -Iinclude $(shell pkg-config --libs --cflags dbus-1)
 
 SRCS := $(shell find $(SRC_DIR) -name *.c)
 OBJS := $(patsubst src/%.c,build/%.o,$(SRCS))
