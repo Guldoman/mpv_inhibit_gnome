@@ -1,18 +1,50 @@
-DBUS_FLAGS=$(shell pkg-config --libs --cflags dbus-1)
+TARGET = lib/mpv_inhibit_gnome.so
+SRC_DIR = src
 
-all: main.o dbus_helper.o gnome_session_manager.o
-	mkdir -p bin
-	gcc -Wall -g -shared main.o dbus_helper.o gnome_session_manager.o -o bin/mpv_inhibit_gnome.so
+C_FLAGS = -Wall -g -fPIC -I./include/ $(shell pkg-config --libs --cflags dbus-1)
 
-main.o: src/main.c
-	gcc -Wall -g -fPIC -c src/main.c
+SRCS := $(shell find $(SRC_DIR) -name *.c)
+OBJS := $(patsubst src/%.c,build/%.o,$(SRCS))
+MPV_INCL := include/mpv/client.h
 
-dbus_helper.o: src/dbus_helper.c
-	gcc -Wall -g -fPIC -c $(DBUS_FLAGS) src/dbus_helper.c
+$(TARGET): $(OBJS)
+	-@mkdir -p $(@D)
+	gcc -Wall -g -shared $^ -o $@
 
-gnome_session_manager.o: src/gnome_session_manager.c
-	gcc -Wall -g -fPIC -c $(DBUS_FLAGS) src/gnome_session_manager.c
+$(MPV_INCL):
+	-@mkdir -p $(@D)
+	curl --silent -o "$@" https://raw.githubusercontent.com/mpv-player/mpv/v0.34.1/libmpv/$(@F)
 
+build/%.o: src/%.c $(MPV_INCL)
+	-@mkdir -p $(@D)
+	gcc -c $(C_FLAGS) $< -o $@
+
+
+define INSTALL_PLUGIN
+.PHONY: $(1) $(2)
+$(1): $$(TARGET)
+	install -t "$(3)" $$<
+
+$(2):
+	-rm -f "$(3)/$$(notdir $$(TARGET))"
+endef
+
+$(eval $(call INSTALL_PLUGIN,install,uninstall,$(HOME)/.config/mpv/scripts))
+$(eval $(call INSTALL_PLUGIN,sys-install,sys-uninstall,/usr/share/mpv/scripts))
+
+MPV_FLATPAK=io.mpv.Mpv
+$(eval $(call INSTALL_PLUGIN,flatpak-install,flatpak-uninstall,$(HOME)/.var/app/$(MPV_FLATPAK)/config/mpv/scripts))
+
+.PHONY: flatpakoverride
+flatpakoverride:
+	flatpak override --user --talk-name=org.gnome.SessionManager $(MPV_FLATPAK)
+
+.PHONY: flatpakunoverride
+flatpakunoverride:
+	flatpak override --user --no-talk-name=org.gnome.SessionManager $(MPV_FLATPAK)
+
+
+.PHONY: clean
 clean:
-	rm -f *.o
-	rm -f bin/mpv_inhibit_gnome.so
+	-rm -rf build
+	-rm -f $(TARGET)

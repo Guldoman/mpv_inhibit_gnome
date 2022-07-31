@@ -1,3 +1,4 @@
 .ccls-cache
-bin/*
-*.o
+lib
+build
+include
