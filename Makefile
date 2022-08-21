@@ -18,7 +18,7 @@ build/%.o: src/%.c
 define INSTALL_PLUGIN
 .PHONY: $(1) $(2)
 $(1): $$(TARGET)
-	install -t "$(3)" $$<
+	install -Dt "$(3)" $$<
 
 $(2):
 	-rm -f "$(3)/$$(notdir $$(TARGET))"
