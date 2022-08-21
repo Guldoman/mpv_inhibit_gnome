@@ -1,21 +1,16 @@
 TARGET = lib/mpv_inhibit_gnome.so
 SRC_DIR = src
 
-C_FLAGS = -Wall -g -fPIC -Iinclude $(shell pkg-config --libs --cflags dbus-1)
+C_FLAGS = -Wall -g -fPIC $(shell pkg-config --libs --cflags dbus-1)
 
 SRCS := $(shell find $(SRC_DIR) -name *.c)
 OBJS := $(patsubst src/%.c,build/%.o,$(SRCS))
-MPV_INCL := include/mpv/client.h
 
 $(TARGET): $(OBJS)
 	-@mkdir -p $(@D)
 	gcc -Wall -g -shared $^ -o $@
 
-$(MPV_INCL):
-	-@mkdir -p $(@D)
-	curl --silent -o "$@" https://raw.githubusercontent.com/mpv-player/mpv/v0.34.1/libmpv/$(@F)
-
-build/%.o: src/%.c $(MPV_INCL)
+build/%.o: src/%.c
 	-@mkdir -p $(@D)
 	gcc -c $(C_FLAGS) $< -o $@
 
