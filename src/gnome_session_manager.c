@@ -10,7 +10,7 @@ struct GSM_s {
 };
 
 void GSM_inhibit(GSM *gsm, const char *app_id, const char *reason,
-                 uint32_t flags)
+                 GSM_flags flags)
 {
 	if(gsm->cookie)
 	{

@@ -11,6 +11,8 @@
 #define GSM_INHIBIT_SUSPEND 4
 #define GSM_INHIBIT_IDLE 8
 
+#define GSM_flags uint32_t
+
 typedef struct GSM_s GSM;
 
 GSM *GSM_init();
@@ -21,7 +23,7 @@ GSM *GSM_init();
  * - `reason` is the justification for the inhibition.
  */
 void GSM_inhibit(GSM *gsm, const char *app_id, const char *reason,
-                 uint32_t flags);
+                 GSM_flags flags);
 void GSM_uninhibit(GSM *gsm);
 
 void GSM_destroy(GSM *gsm);
