@@ -6,7 +6,7 @@
 
 #include "gnome_session_manager.h"
 
-#define FLAG_PROP_COUNT 7
+#define FLAG_PROP_COUNT 8
 
 typedef struct __attribute__((packed)) {
 	bool pause;
@@ -14,6 +14,7 @@ typedef struct __attribute__((packed)) {
 	bool stop_screensaver;
 	bool window_minimized;
 	bool mute;
+	bool albumart;
 	bool vid;
 	bool aid;
 } PropsFlags;
@@ -65,6 +66,7 @@ void init_globals(plugin_globals *globals)
 	    .window_minimized = false,
 	    // No inhibition if no audio and no video
 	    .mute = false,
+	    .albumart  = false,
 	    .vid  = false,
 	    .aid  = false};
 }
@@ -75,7 +77,7 @@ void update_prop(plugin_globals *globals, unsigned prop_index, bool value)
 	globals->props.values[prop_index] = value;
 	PropsFlags props                  = globals->props.flags;
 
-	bool visually_perceivable = props.vid && !props.window_minimized;
+	bool visually_perceivable = props.vid && !props.window_minimized && !props.albumart;
 	bool auditory_perceivable = props.aid && !props.mute;
 	bool playing_perceivable  = !(props.idle_active || props.pause)
 	                           && (auditory_perceivable || visually_perceivable);
@@ -120,7 +122,7 @@ int mpv_open_cplugin(mpv_handle *handle)
 
 	const char *const flag_prop_names[FLAG_PROP_COUNT] = {
 	    "pause", "idle-active", "stop-screensaver", "window-minimized", "mute",
-	    "vid",   "aid",
+	    "current-tracks/video/albumart", "vid", "aid",
 	};
 	for(unsigned i = 0; i < FLAG_PROP_COUNT; i++)
 	{
