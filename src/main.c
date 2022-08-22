@@ -1,40 +1,61 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #include <mpv/client.h>
 
 #include "gnome_session_manager.h"
 
-#define FLAG_PROP_COUNT 8
+#define GET_FLAG(field, index) (((field) & (1 << (index))) >> (index))
+#define SET_FLAG(field, index, value) (\
+	(value) ?\
+		(field) |= (1 << (index))\
+	:\
+		((field) &= ~(1 << (index)))\
+	)
 
-typedef struct __attribute__((packed)) {
-	bool pause;
-	bool idle_active;
-	bool stop_screensaver;
-	bool window_minimized;
-	bool mute;
-	bool albumart;
-	bool vid;
-	bool aid;
-} PropsFlags;
+enum {
+	PAUSE = 0,
+	IDLE_ACTIVE,
+	STOP_SCREENSAVER,
+	WINDOW_MINIMIZED,
+	MUTE,
+	ALBUMART,
+	VID,
+	AID,
+	LAST_FLAG,
+};
 
-typedef union {
-	PropsFlags flags;
-	bool values[FLAG_PROP_COUNT];
-} Props;
+#define props_field uint8_t
+static_assert(LAST_FLAG <= sizeof(props_field) * 8, "Increase props_field size");
 
+const struct {
+	const char* name;
+	int flag_type;
+} flag_prop_names[] = {
+	{"pause"                         , MPV_FORMAT_FLAG  },
+	{"idle-active"                   , MPV_FORMAT_FLAG  },
+	{"stop-screensaver"              , MPV_FORMAT_FLAG  },
+	{"window-minimized"              , MPV_FORMAT_FLAG  },
+	{"mute"                          , MPV_FORMAT_FLAG  },
+	{"current-tracks/video/albumart" , MPV_FORMAT_FLAG  },
+	{"vid"                           , MPV_FORMAT_INT64 },
+	{"aid"                           , MPV_FORMAT_INT64 },
+	{NULL                            , MPV_FORMAT_NONE  },
+};
+static_assert(sizeof(flag_prop_names) / sizeof(flag_prop_names[0]) == LAST_FLAG + 1, "Wrong number of flag_prop_names");
 
 typedef struct {
 	// handles
 	mpv_handle *handle;
 	GSM *gsm;
 
-	// active inhibition flags
-	uint32_t flags;
-
 	// mpv props
-	Props props;
+	props_field props;
+
+	// current status
+	GSM_flags inhibition_status;
 } plugin_globals;
 
 void show_text(mpv_handle *handle, const char *text)
@@ -47,57 +68,44 @@ void show_text(mpv_handle *handle, const char *text)
 
 void init_globals(plugin_globals *globals)
 {
-	// handles
 	globals->gsm    = NULL;
 	globals->handle = NULL;
 
-	globals->flags = 0;
-	// mpv props
-	globals->props.flags = (PropsFlags){
-	    // True if paused
-	    .pause = true,
-	    // If true, no file is loaded
-	    // We need to check this property because `pause` may be false while no
-	    // media is being played and `--idle` is specified
-	    .idle_active = false,
-	    // If false, disable inhibition
-	    .stop_screensaver = false,
-	    // If playing audio minimized, only inhibit suspend
-	    .window_minimized = false,
-	    // No inhibition if no audio and no video
-	    .mute = false,
-	    .albumart  = false,
-	    .vid  = false,
-	    .aid  = false};
+	globals->props = 0;
+	globals->inhibition_status = 0;
 }
 
 
 void update_prop(plugin_globals *globals, unsigned prop_index, bool value)
 {
-	globals->props.values[prop_index] = value;
-	PropsFlags props                  = globals->props.flags;
+	SET_FLAG(globals->props, prop_index, value);
+	props_field props = globals->props;
 
-	bool visually_perceivable = props.vid && !props.window_minimized && !props.albumart;
-	bool auditory_perceivable = props.aid && !props.mute;
-	bool playing_perceivable  = !(props.idle_active || props.pause)
-	                           && (auditory_perceivable || visually_perceivable);
+	// If the video track is not an album art, the media is surely a video
+	bool visually_perceivable = GET_FLAG(props, VID)
+	                        && !GET_FLAG(props, ALBUMART)
+	                        && !GET_FLAG(props, WINDOW_MINIMIZED);
+	// If there is any audio at all
+	bool auditory_perceivable = GET_FLAG(props, AID) && !GET_FLAG(props, MUTE);
+	bool playing_perceivable  = !(GET_FLAG(props, IDLE_ACTIVE) || GET_FLAG(props, PAUSE))
+	                          && (auditory_perceivable || visually_perceivable);
 
-	bool inhibit_suspend = props.stop_screensaver && playing_perceivable;
+	bool inhibit_suspend = GET_FLAG(props, STOP_SCREENSAVER) && playing_perceivable;
 	bool inhibit_idle    = inhibit_suspend && visually_perceivable;
 
-	uint32_t new_flags = (inhibit_idle * GSM_INHIBIT_IDLE)
+	GSM_flags new_status = (inhibit_idle    * GSM_INHIBIT_IDLE)
 	                     | (inhibit_suspend * GSM_INHIBIT_SUSPEND);
 
-	if(globals->flags != new_flags)
+	if(globals->inhibition_status != new_status)
 	{
-		globals->flags = new_flags;
-		if(new_flags)
+		globals->inhibition_status = new_status;
+		if(new_status)
 		{
 			show_text(globals->handle,
 			          (inhibit_idle ? "Starting inhibit: idle,suspend"
 			                        : "Starting inhibit: suspend"));
 			GSM_inhibit(globals->gsm, "mpv",
-			            inhibit_idle ? "Playing video" : "Playing audio", new_flags);
+			            inhibit_idle ? "Playing video" : "Playing audio", new_status);
 		}
 		else
 		{
@@ -110,8 +118,7 @@ void update_prop(plugin_globals *globals, unsigned prop_index, bool value)
 int mpv_open_cplugin(mpv_handle *handle)
 {
 	bool done = 0;
-	plugin_globals globals;
-	init_globals(&globals);
+	plugin_globals globals = {0};
 	globals.handle = handle;
 
 	globals.gsm = GSM_init();
@@ -120,15 +127,9 @@ int mpv_open_cplugin(mpv_handle *handle)
 		return -1; // Error while opening dbus
 	}
 
-	const char *const flag_prop_names[FLAG_PROP_COUNT] = {
-	    "pause", "idle-active", "stop-screensaver", "window-minimized", "mute",
-	    "current-tracks/video/albumart", "vid", "aid",
-	};
-	for(unsigned i = 0; i < FLAG_PROP_COUNT; i++)
+	for(unsigned i = 0; flag_prop_names[i].name; i++)
 	{
-		mpv_observe_property(globals.handle, 0, flag_prop_names[i],
-		                     i < FLAG_PROP_COUNT - 2 ? MPV_FORMAT_FLAG
-		                                             : MPV_FORMAT_INT64);
+		mpv_observe_property(globals.handle, 0, flag_prop_names[i].name, flag_prop_names[i].flag_type);
 	}
 
 	mpv_event *event         = NULL;
@@ -143,15 +144,29 @@ int mpv_open_cplugin(mpv_handle *handle)
 			case MPV_EVENT_PROPERTY_CHANGE:
 				prop = event->data;
 
-				if(prop->format == MPV_FORMAT_FLAG || prop->format == MPV_FORMAT_INT64)
+				for(unsigned i = 0; flag_prop_names[i].name; i++)
 				{
-					for(unsigned i = 0; i < FLAG_PROP_COUNT; i++)
+					if(strcmp(prop->name, flag_prop_names[i].name) == 0)
 					{
-						if(strcmp(prop->name, flag_prop_names[i]) == 0)
-						{
-							update_prop(&globals, i, *(bool *)(prop->data));
-							break;
+						bool value = false;
+						switch (prop->format) {
+							case MPV_FORMAT_INT64:
+								value = *(int64_t *)prop->data > 0;
+								break;
+							case MPV_FORMAT_FLAG:
+								value = *(bool *)prop->data;
+								break;
+							case MPV_FORMAT_NONE:
+								// The property is disabled, so keep value as false
+								break;
+							default:
+								// Ignore any other format
+								goto done_update_prop;
+								break;
 						}
+						update_prop(&globals, i, value);
+done_update_prop:
+						break;
 					}
 				}
 				break;
