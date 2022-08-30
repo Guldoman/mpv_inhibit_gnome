@@ -1,10 +1,18 @@
 project('mpv_inhibit_gnome', 'c',
   version: '1',
   license: 'MIT',
-  default_options: ['warning_level=3', 'prefix=/etc/']
+  default_options: [
+    'buildtype=release',
+    'warning_level=3',
+    'prefix=/etc/'
+  ]
 )
 
-# option('debug', type : 'boolean', value : false)
+
+if get_option('buildtype') != 'release'
+  add_project_arguments('-DDEBUG', language: 'c')
+endif
+
 srcs = [
   'src/dbus_helper.c',
   'src/gnome_session_manager.c',
@@ -29,13 +37,13 @@ endif
 shared_library(
   meson.project_name(),
   srcs,
-  install: true,
-  override_options: 'b_lundef=false',
+  override_options: ['b_lundef=false'],
   include_directories : incs,
   dependencies : [
     dependency('dbus-1').partial_dependency(compile_args: true, includes: true)
   ],
   name_prefix : '',
+  install: true,
   install_dir : 'mpv' / 'scripts'
 )
 
