@@ -2,18 +2,19 @@ TARGET = lib/mpv_inhibit_gnome.so
 SRC_DIR = src
 XDG_CONFIG_DIR := $(or $(XDG_CONFIG_HOME),$(HOME)/.config)
 
-C_FLAGS = -Wall -g $(shell pkg-config --libs --cflags dbus-1)
+LDFLAGS += $(shell pkg-config --libs dbus-1)
+CFLAGS += -Wall $(shell pkg-config --cflags dbus-1)
 
 SRCS := $(shell find $(SRC_DIR) -name *.c)
 OBJS := $(patsubst src/%.c,build/%.o,$(SRCS))
 
 $(TARGET): $(OBJS)
 	-@mkdir -p $(@D)
-	gcc $(C_FLAGS) -shared $^ -o $@
+	gcc $(CFLAGS) $(LDFLAGS) -shared $^ -o $@
 
 build/%.o: src/%.c
 	-@mkdir -p $(@D)
-	gcc -c $(C_FLAGS) -fPIC $< -o $@
+	gcc -c $(CFLAGS) $(LDFLAGS) -fPIC $< -o $@
 
 define INSTALL_PLUGIN
 .PHONY: $(1) $(2)
