@@ -10,11 +10,11 @@ OBJS := $(patsubst src/%.c,build/%.o,$(SRCS))
 
 $(TARGET): $(OBJS)
 	-@mkdir -p $(@D)
-	gcc $(CFLAGS) $(LDFLAGS) -shared $^ -o $@
+	gcc $^ -o $@ $(CFLAGS) -shared $(LDFLAGS)
 
 build/%.o: src/%.c
 	-@mkdir -p $(@D)
-	gcc -c $(CFLAGS) $(LDFLAGS) -fPIC $< -o $@
+	gcc -c $< -o $@ $(CFLAGS) -fPIC $(LDFLAGS)
 
 define INSTALL_PLUGIN
 .PHONY: $(1) $(2)
