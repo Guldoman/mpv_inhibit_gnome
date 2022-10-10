@@ -40,7 +40,7 @@ shared_library(
   override_options: ['b_lundef=false'],
   include_directories : incs,
   dependencies : [
-    dependency('dbus-1').partial_dependency(compile_args: true, includes: true)
+    dependency('dbus-1')
   ],
   name_prefix : '',
   install: true,
