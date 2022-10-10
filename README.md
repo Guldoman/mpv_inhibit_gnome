@@ -36,6 +36,17 @@ To install in the default system-wide location `/usr/share/mpv/scripts` run:
 sudo make sys-install
 ```
 
+### Meson
+
+Configure meson build and install to `~/.config/mpv/scripts`:
+```bash
+meson --prefix=${XDG_CONFIG_HOME:-${HOME}/.config} build
+ninja -C build install
+```
+Or just run:
+```bash
+./install.sh
+```
 ## Flatpak support
 
 TL;DR:
