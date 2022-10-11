@@ -28,17 +28,6 @@ endef
 $(eval $(call INSTALL_PLUGIN,install,uninstall,$(XDG_CONFIG_DIR)/mpv/scripts))
 $(eval $(call INSTALL_PLUGIN,sys-install,sys-uninstall,/usr/share/mpv/scripts))
 
-MPV_FLATPAK=io.mpv.Mpv
-$(eval $(call INSTALL_PLUGIN,flatpak-install,flatpak-uninstall,$(HOME)/.var/app/$(MPV_FLATPAK)/config/mpv/scripts))
-
-.PHONY: flatpakoverride
-flatpakoverride:
-	flatpak override --user --talk-name=org.gnome.SessionManager $(MPV_FLATPAK)
-
-.PHONY: flatpakunoverride
-flatpakunoverride:
-	flatpak override --user --no-talk-name=org.gnome.SessionManager $(MPV_FLATPAK)
-
 .PHONY: clean
 clean:
 	-rm -rf build

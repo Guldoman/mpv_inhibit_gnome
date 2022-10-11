@@ -38,20 +38,10 @@ sudo make sys-install
 
 ## Flatpak support
 
-TL;DR:
-```bash
-make flatpak-install flatpakoverride
-```
-and you're good to go.
+This plugin has been integrated into the
+[Flatpak release of mpv](https://flathub.org/apps/details/io.mpv.Mpv),
+so you should already be good to go.
 
-This will install the plugin in `~/.var/app/io.mpv.Mpv/config/mpv/scripts`,
-and will punch a hole in the Flatpak sandbox to allow `mpv` to talk
-to the D-Bus address that GNOME uses for inhibiting screen blanking.
-
-You can manually allow `mpv` to talk to the D-Bus address by running:
-```bash
-flatpak override --user --talk-name=org.gnome.SessionManager io.mpv.Mpv
-```
-It's also possible to use
-[Flatseal](https://flathub.org/apps/details/com.github.tchx84.Flatseal)
-to do that.
+If this plugin was manually installed before the integration,
+uninstall it to avoid conflicts by deleting
+`~/.var/app/io.mpv.Mpv/config/mpv/scripts/mpv_inhibit_gnome.so`.
