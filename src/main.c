@@ -126,6 +126,13 @@ int mpv_open_cplugin(mpv_handle *handle)
 	{
 		return -1; // Error while opening dbus
 	}
+	if(!GSM_available(globals.gsm))
+	{
+		// The dbus interface isn't available,
+		// so we're likely not needed
+		GSM_destroy(globals.gsm);
+		return 0;
+	}
 
 	for(unsigned i = 0; flag_prop_names[i].name; i++)
 	{

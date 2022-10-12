@@ -5,6 +5,7 @@
 
 #pragma once
 #include <stdint.h>
+#include <stdbool.h>
 
 #define GSM_INHIBIT_LOGOUT 1
 #define GSM_INHIBIT_USER_SWITCH 2
@@ -16,6 +17,11 @@
 typedef struct GSM_s GSM;
 
 GSM *GSM_init();
+
+/*
+ * Check if inhibition via the GNOME interface is available.
+ */
+bool GSM_available(GSM *gsm);
 
 /*
  * Ask the Session Manager to inhibit what is specified by `flags`.

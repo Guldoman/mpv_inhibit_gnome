@@ -68,6 +68,13 @@ void GSM_uninhibit(GSM *gsm)
 	gsm->cookie = 0;
 }
 
+bool GSM_available(GSM *gsm)
+{
+	return DBH_method_check(gsm->dbh, "org.gnome.SessionManager",
+	                        "/org/gnome/SessionManager", "org.gnome.SessionManager",
+	                        "Uninhibit", DBUS_TYPE_UINT32, &gsm->cookie, DBUS_TYPE_INVALID);
+}
+
 GSM *GSM_init()
 {
 	GSM *gsm = (GSM *)malloc(sizeof(GSM));
