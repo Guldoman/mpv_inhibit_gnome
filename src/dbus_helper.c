@@ -19,7 +19,11 @@ DBusMessage *DBH_call(DBH *dbh, const char *name, const char *path,
 	dbus_message_unref(method_call);
 	if(dbus_error_is_set(dbh->error))
 	{
-		dbus_message_unref(method_reply);
+		dbus_error_free(dbh->error);
+		if(method_reply != NULL)
+		{
+			dbus_message_unref(method_reply);
+		}
 		return NULL;
 	}
 
