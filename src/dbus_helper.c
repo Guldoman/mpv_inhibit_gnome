@@ -1,6 +1,26 @@
 #include "dbus_helper.h"
 #include <stdlib.h>
 
+bool DBH_method_check(DBH *dbh, const char *name, const char *path,
+                      const char *interface, const char *method_name,
+                      int first_arg_type, ...)
+{
+	va_list args;
+	va_start(args, first_arg_type);
+
+	DBusMessage *method_call =
+	    dbus_message_new_method_call(name, path, interface, method_name);
+
+	dbus_message_append_args_valist(method_call, first_arg_type, args);
+
+	bool result =
+	    dbus_message_is_method_call(method_call, interface, method_name);
+
+	dbus_message_unref(method_call);
+
+	return result;
+}
+
 DBusMessage *DBH_call(DBH *dbh, const char *name, const char *path,
                       const char *interface, const char *method_name,
                       int first_arg_type, ...)

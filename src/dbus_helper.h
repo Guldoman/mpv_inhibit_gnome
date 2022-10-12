@@ -3,6 +3,7 @@
  */
 #pragma once
 #include <dbus/dbus.h>
+#include <stdbool.h>
 
 typedef struct {
 	DBusConnection *connection;
@@ -10,6 +11,13 @@ typedef struct {
 } DBH;
 
 DBH *DBH_init();
+
+/*
+ * Check if the method is available.
+ */
+bool DBH_method_check(DBH *dbh, const char *name, const char *path,
+                      const char *interface, const char *method_name,
+                      int first_arg_type, ...);
 
 /*
  * Call a dbus method.
