@@ -1,6 +1,6 @@
 # `mpv_inhibit_gnome`
 
-![AUR version](https://img.shields.io/aur/version/mpv_inhibit_gnome)
+[![AUR version](https://img.shields.io/aur/version/mpv_inhibit_gnome)](https://aur.archlinux.org/packages/mpv_inhibit_gnome)
 
 This mpv plugin prevents screen blanking in GNOME while playing media.
 
