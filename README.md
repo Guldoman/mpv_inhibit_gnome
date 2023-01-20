@@ -1,6 +1,7 @@
 # `mpv_inhibit_gnome`
 
 [![AUR version](https://img.shields.io/aur/version/mpv_inhibit_gnome)](https://aur.archlinux.org/packages/mpv_inhibit_gnome)
+[![COPR version](https://img.shields.io/badge/dynamic/json?color=blue&label=copr&query=builds.latest_succeeded.source_package.version&url=https%3A%2F%2Fcopr.fedorainfracloud.org%2Fapi_3%2Fpackage%3Fownername%3Dsolopasha%26projectname%3Dmpv_inhibit_gnome%26packagename%3Dmpv_inhibit_gnome%26with_latest_succeeded_build%3DTrue)](https://copr.fedorainfracloud.org/coprs/solopasha/mpv_inhibit_gnome/)
 
 This mpv plugin prevents screen blanking in GNOME while playing media.
 
